@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EvoPort: AI Portfolio Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #05071E;
+            color: #E0E0E0;
+        }
+        .gradient-text {
+            background: linear-gradient(90deg, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .cta-button {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4), 0 4px 6px -2px rgba(79, 70, 229, 0.2);
+        }
+        .card {
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: #818cf8;
+        }
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+        }
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 50;
+        }
+        .modal-backdrop.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #111827;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 56rem;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .modal-backdrop.visible .modal-content {
+            transform: scale(1);
+        }
+        .step-indicator.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        .modal-step-content { display: none; }
+        .modal-step-content.active { display: block; }
+        .sub-tab.active {
+             border-color: #6366f1;
+             background-color: #3730a3;
+             color: white;
+        }
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #FFF;
+            border-bottom-color: #4f46e5;
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="w-full">
+    <!-- Background Blobs -->
+    <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+        <div class="blob bg-indigo-500 top-[-10%] left-[10%] w-[500px] h-[500px]"></div>
+        <div class="blob bg-purple-500 bottom-[-10%] right-[10%] w-[500px] h-[500px]"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 w-full bg-opacity-50 backdrop-blur-md z-40 border-b border-white/10">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-white">Evo<span class="gradient-text">Port</span></h1>
+            <nav class="hidden md:flex space-x-8">
+                <a href="#features" class="text-gray-300 hover:text-white transition">Features</a>
+                <a href="#demo" class="text-gray-300 hover:text-white transition">Demo</a>
+                <a href="#how-it-works" class="text-gray-300 hover:text-white transition">How It Works</a>
+            </nav>
+            <button class="bg-indigo-600 text-white px-5 py-2 rounded-lg font-semibold cta-button md:hidden" id="getStartedBtnMobile">
+                Get Started
+            </button>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 pt-24">
+        <!-- Hero Section -->
+        <section class="text-center py-20 md:py-32">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-4xl md:text-6xl font-extrabold text-white leading-tight mb-6 fade-in" style="animation-delay: 100ms;">
+                    Your Learning Journey, <span class="gradient-text">Transformed into Opportunity</span>
+                </h2>
+                <p class="text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto fade-in" style="transition-delay: 200ms;">
+                    EvoPort is an AI-powered companion that acts as a knowledge historian, dynamically generating tailored portfolios for specific job roles from your unique learning journey.
+                </p>
+                <button class="bg-indigo-600 text-white px-8 py-4 rounded-lg font-bold text-lg cta-button fade-in" id="createPortfolioBtn" style="transition-delay: 400ms;">
+                    Create Your AI Portfolio
+                </button>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section id="how-it-works" class="py-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-white fade-in">How It Works in 3 Simple Steps</h2>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8 text-center">
+                <div class="card p-8 rounded-xl fade-in" style="transition-delay: 100ms;">
+                    <h3 class="text-2xl font-bold text-white mb-3">1. Connect & Ingest</h3>
+                    <p class="text-gray-400">Sync your learning platforms, upload documents, or manually add your skills and projects.</p>
+                </div>
+                <div class="card p-8 rounded-xl fade-in" style="transition-delay: 200ms;">
+                    <h3 class="text-2xl font-bold text-white mb-3">2. Define Target</h3>
+                    <p class="text-gray-400">Tell our AI the specific job role or industry you're aiming for.</p>
+                </div>
+                <div class="card p-8 rounded-xl fade-in" style="transition-delay: 300ms;">
+                    <h3 class="text-2xl font-bold text-white mb-3">3. Generate & Export</h3>
+                    <p class="text-gray-400">Receive a professionally tailored portfolio, highlighting your most relevant achievements.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Demo Section -->
+        <section id="demo" class="py-20">
+            <div class="text-center mb-12">
+                 <h2 class="text-3xl md:text-4xl font-bold text-white fade-in">See EvoPort in Action</h2>
+                 <p class="text-gray-400 mt-4 max-w-2xl mx-auto fade-in">Select a target role to see how the AI instantly tailors the portfolio to highlight the most relevant skills.</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8 items-start fade-in">
+                <div class="card p-6 rounded-xl">
+                    <h3 class="font-bold text-white mb-4">Target Job Role</h3>
+                    <select id="role-selector" class="w-full bg-gray-800 border border-gray-700 text-white rounded-md p-3 focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="frontend">Frontend Developer</option>
+                        <option value="backend">Backend Developer</option>
+                        <option value="data">Data Scientist</option>
+                        <option value="ux">UX/UI Designer</option>
+                    </select>
+                </div>
+                <div class="card p-6 rounded-xl min-h-[300px]">
+                    <h3 class="font-bold text-white mb-2">AI-Generated Portfolio</h3>
+                    <p id="portfolio-subtitle" class="text-sm text-gray-400 mb-4 transition-all">For a <span class="font-semibold text-indigo-400">Frontend Developer</span></p>
+                    <div id="portfolio-output" class="space-y-3">
+                        <!-- Portfolio items will be dynamically inserted here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Features Section -->
+        <section id="features" class="py-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-white fade-in">Core Features</h2>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="card p-6 rounded-xl fade-in">
+                    <h3 class="font-bold text-lg text-white mb-2">Multi-Source Ingestion</h3>
+                    <p class="text-gray-400 text-sm">Connect accounts, upload files, or add manual entries to build a complete picture of your skills.</p>
+                </div>
+                <div class="card p-6 rounded-xl fade-in">
+                    <h3 class="font-bold text-lg text-white mb-2">AI-Powered Tailoring</h3>
+                    <p class="text-gray-400 text-sm">Our AI analyzes your data and the job description to highlight what matters most.</p>
+                </div>
+                 <div class="card p-6 rounded-xl fade-in">
+                    <h3 class="font-bold text-lg text-white mb-2">Dynamic Generation</h3>
+                    <p class="text-gray-400 text-sm">Instantly create different portfolio versions for various job applications.</p>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Call to Action -->
+        <section class="text-center py-20 fade-in">
+            <h2 class="text-3xl font-bold text-white mb-4">Ready to Build Your Future?</h2>
+            <p class="text-gray-400 mb-8 max-w-xl mx-auto">Stop juggling documents and start showcasing your true potential. Let EvoPort build the perfect portfolio for you.</p>
+            <button class="bg-indigo-600 text-white px-8 py-4 rounded-lg font-bold text-lg cta-button" id="getStartedBtn">
+                Get Started For Free
+            </button>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/10 mt-20">
+        <div class="container mx-auto px-6 py-8 text-center text-gray-500">
+            <p>&copy; 2025 EvoPort. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- AI Portfolio Creation Modal -->
+    <div id="portfolioModal" class="modal-backdrop">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center p-6 border-b border-white/10 flex-shrink-0">
+                <h2 class="text-2xl font-bold text-white">Create Your Evo<span class="gradient-text">Port</span></h2>
+                <button id="closeModalBtn" class="text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="flex-grow flex flex-col md:flex-row overflow-hidden">
+                <!-- Step Navigation -->
+                <div class="p-6 border-b md:border-b-0 md:border-r border-white/10 flex-shrink-0">
+                    <nav class="flex md:flex-col justify-center md:justify-start md:space-y-4 space-x-4 md:space-x-0">
+                        <button data-step="1" class="step-indicator active flex items-center space-x-3 text-left p-2 rounded-md w-full"><span class="bg-gray-700 text-sm font-bold w-6 h-6 flex items-center justify-center rounded-full">1</span><span class="hidden md:inline">Connect Data</span></button>
+                        <button data-step="2" class="step-indicator flex items-center space-x-3 text-left p-2 rounded-md w-full"><span class="bg-gray-700 text-sm font-bold w-6 h-6 flex items-center justify-center rounded-full">2</span><span class="hidden md:inline">Review Skills</span></button>
+                        <button data-step="3" class="step-indicator flex items-center space-x-3 text-left p-2 rounded-md w-full"><span class="bg-gray-700 text-sm font-bold w-6 h-6 flex items-center justify-center rounded-full">3</span><span class="hidden md:inline">Define Target</span></button>
+                        <button data-step="4" class="step-indicator flex items-center space-x-3 text-left p-2 rounded-md w-full"><span class="bg-gray-700 text-sm font-bold w-6 h-6 flex items-center justify-center rounded-full">4</span><span class="hidden md:inline">Generate</span></button>
+                    </nav>
+                </div>
+                
+                <!-- Step Content -->
+                <div class="flex-grow p-8 overflow-y-auto">
+                    <!-- Step 1: Connect Data -->
+                    <div id="step-1" class="modal-step-content active">
+                        <h3 class="text-xl font-bold text-white mb-2">Connect Your Data Sources</h3>
+                        <p class="text-gray-400 mb-6">Aggregate your experience from multiple sources.</p>
+                        
+                        <!-- Sub-tabs -->
+                        <div class="flex space-x-2 border-b border-gray-700 mb-4">
+                            <button data-subtab="auto" class="sub-tab active text-sm font-medium p-3 border-b-2 border-transparent">Automatic Sync</button>
+                            <button data-subtab="upload" class="sub-tab text-sm font-medium p-3 border-b-2 border-transparent">File Upload</button>
+                            <button data-subtab="manual" class="sub-tab text-sm font-medium p-3 border-b-2 border-transparent">Manual Entry</button>
+                        </div>
+                        
+                        <!-- Sub-tab Content -->
+                        <div id="subtab-auto" class="subtab-content">
+                             <p class="text-sm text-gray-400 mb-4">Connect platforms to automatically sync your courses, projects, and contributions.</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <button class="card p-4 text-left rounded-lg flex items-center space-x-4 hover:border-indigo-500">
+                                    <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 2.731 9.805 6.571 11.338.48.088.657-.211.657-.468 0-.23-.008-.843-.013-1.654-2.659.576-3.22-1.282-3.22-1.282-.436-1.11-1.066-1.406-1.066-1.406-.872-.596.066-.584.066-.584.965.068 1.473 1.011 1.473 1.011.858 1.469 2.248 1.045 2.797.798.087-.62.336-1.044.612-1.284-2.135-.243-4.376-1.067-4.376-4.755 0-1.051.376-1.91.991-2.582-.099-.244-.429-1.22.094-2.544 0 0 .807-.258 2.644 1.01.766-.212 1.588-.319 2.406-.322.818.003 1.64.11 2.406.322 1.837-1.268 2.644-1.01 2.644-1.01.524 1.324.194 2.3.095 2.544.617.672.99 1.531.99 2.582 0 3.698-2.244 4.508-4.388 4.747.344.296.652.883.652 1.782 0 1.284-.012 2.322-.012 2.637 0 .258.175.556.66.463C19.271 21.802 22 17.302 22 12c0-6.627-5.373-12-10-12z"/></svg>
+                                    <div>
+                                        <h4 class="font-bold text-white">GitHub</h4>
+                                        <p class="text-xs text-gray-500">Repositories & Contributions</p>
+                                    </div>
+                                </button>
+                                <button class="card p-4 text-left rounded-lg flex items-center space-x-4 hover:border-pink-500">
+                                     <svg class="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 12H16c-.7 2-2 3-4 3s-3.3-1-4-3H2.5"/><path d="M5.5 15V9a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v6"/><path d="M12 12v6"/></svg>
+                                    <div>
+                                        <h4 class="font-bold text-white">Coursera</h4>
+                                        <p class="text-xs text-gray-500">Completed Courses</p>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="subtab-upload" class="subtab-content hidden">
+                             <p class="text-sm text-gray-400 mb-4">Upload transcripts, certificates, or project files (PDF, DOCX, JPG, PNG).</p>
+                             <input type="file" id="file-upload-input" class="hidden" multiple>
+                             <label for="file-upload-input" id="drop-zone" class="border-2 border-dashed border-gray-600 rounded-lg p-12 text-center cursor-pointer hover:border-indigo-500 hover:bg-gray-900/50">
+                                <p class="text-gray-400">Drag & drop files here or click to browse</p>
+                             </label>
+                             <div id="file-preview-container" class="mt-4 space-y-2"></div>
+                        </div>
+                         <div id="subtab-manual" class="subtab-content hidden">
+                             <p class="text-sm text-gray-400 mb-4">Manually add individual skills, projects, or experiences.</p>
+                             <div id="manual-entry-list" class="space-y-2 mb-4"></div>
+                             <form id="manual-entry-form" class="hidden space-y-3 card p-4">
+                                <input type="text" id="manual-title" placeholder="Title (e.g., React Web Development)" class="w-full bg-gray-800 border-gray-700 rounded p-2 text-white" required>
+                                <input type="text" id="manual-subtitle" placeholder="Subtitle (e.g., Personal Project)" class="w-full bg-gray-800 border-gray-700 rounded p-2 text-white" required>
+                                <input type="text" id="manual-tags" placeholder="Tags (comma-separated, e.g., React,JS,API)" class="w-full bg-gray-800 border-gray-700 rounded p-2 text-white" required>
+                                <div class="flex justify-end space-x-2">
+                                    <button type="button" id="cancel-manual-entry" class="bg-gray-600 px-4 py-2 rounded">Cancel</button>
+                                    <button type="submit" class="bg-indigo-600 px-4 py-2 rounded">Add</button>
+                                </div>
+                             </form>
+                             <button id="add-manual-entry-btn" class="w-full card p-4 text-center rounded-lg hover:border-indigo-500">
+                                + Add an entry
+                             </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Review Skills -->
+                    <div id="step-2" class="modal-step-content h-full">
+                        <div id="step-2-loader" class="hidden flex flex-col items-center justify-center h-full">
+                            <div class="loader"></div>
+                            <p class="mt-4 text-lg text-gray-300">AI is analyzing your data...</p>
+                        </div>
+                        <div id="step-2-content" class="h-full">
+                            <h3 class="text-xl font-bold text-white mb-2">Review Your Skills & Projects</h3>
+                             <p class="text-gray-400 mb-6">We've extracted the following items. Please review, edit, or remove them as needed.</p>
+                             <div id="review-list-container" class="space-y-3">
+                                <!-- Dynamic content will go here -->
+                             </div>
+                        </div>
+                    </div>
+                     <!-- Step 3: Define Target -->
+                    <div id="step-3" class="modal-step-content">
+                        <h3 class="text-xl font-bold text-white mb-2">What is Your Target Role?</h3>
+                        <p class="text-gray-400 mb-6">Tell the AI what job you're aiming for so it can tailor the portfolio content and highlight relevant skills.</p>
+                        <input type="text" id="target-role-input" placeholder="e.g., Senior Frontend Developer at Google" class="w-full bg-gray-800 border-gray-700 text-white rounded-md p-3 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                     <!-- Step 4: Generate -->
+                    <div id="step-4" class="modal-step-content h-full">
+                         <h3 class="text-xl font-bold text-white mb-2">Portfolio Generated!</h3>
+                         <p class="text-gray-400 mb-6">Here is a preview based on your data and target role. You can now customize and export it.</p>
+                         <div id="portfolio-preview-container" class="w-full h-full bg-gray-900/50 rounded-lg border border-white/10 p-6 overflow-y-auto">
+                            <!-- Generated portfolio will appear here -->
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex justify-between items-center p-6 border-t border-white/10 flex-shrink-0">
+                <button id="backBtn" class="bg-gray-600 hover:bg-gray-500 text-white px-6 py-2 rounded-lg hidden">Back</button>
+                <button id="nextBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg ml-auto">Next</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- Fade-in on Scroll ---
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+            // --- Interactive Demo Logic ---
+            const roleSelector = document.getElementById('role-selector');
+            const portfolioOutput = document.getElementById('portfolio-output');
+            const portfolioSubtitle = document.getElementById('portfolio-subtitle');
+
+            const allSkills = [
+                { title: 'React.js Ecommerce Platform', tags: ['frontend', 'react', 'js'] },
+                { title: 'Node.js REST API', tags: ['backend', 'node', 'api'] },
+                { title: 'Python ML Model for Sales Forecasting', tags: ['data', 'python', 'ml'] },
+                { title: 'Figma Design System for Mobile App', tags: ['ux', 'figma'] },
+                { title: 'Vue.js Component Library', tags: ['frontend', 'vue', 'js'] },
+                { title: 'Django User Authentication', tags: ['backend', 'python', 'django'] },
+                { title: 'Data Visualization with D3.js', tags: ['frontend', 'data', 'js'] },
+            ];
+
+            function updatePortfolioDemo() {
+                const selectedRole = roleSelector.value;
+                const roleText = roleSelector.options[roleSelector.selectedIndex].text;
+                portfolioSubtitle.innerHTML = `For a <span class="font-semibold text-indigo-400">${roleText}</span>`;
+                portfolioOutput.innerHTML = '';
+
+                allSkills.forEach(skill => {
+                    const isRelevant = skill.tags.includes(selectedRole);
+                    const item = document.createElement('div');
+                    item.className = `p-3 rounded-lg text-sm transition-all duration-300 ${isRelevant ? 'bg-indigo-900/70 border border-indigo-500' : 'bg-gray-800/50'}`;
+                    item.innerHTML = `<span class="font-semibold text-white">${skill.title}</span>`;
+                    if (isRelevant) {
+                        portfolioOutput.prepend(item);
+                    } else {
+                        portfolioOutput.appendChild(item);
+                    }
+                });
+            }
+            roleSelector.addEventListener('change', updatePortfolioDemo);
+            updatePortfolioDemo(); // Initial call
+
+            // --- Modal Logic ---
+            const modal = document.getElementById('portfolioModal');
+            const createPortfolioBtn = document.getElementById('createPortfolioBtn');
+            const getStartedBtn = document.getElementById('getStartedBtn');
+            const getStartedBtnMobile = document.getElementById('getStartedBtnMobile');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const backBtn = document.getElementById('backBtn');
+            
+            let currentStep = 1;
+            let userJourneyData = [];
+
+            const openModal = () => {
+                userJourneyData = [];
+                updateStep(1);
+                renderStep1();
+                modal.classList.add('visible');
+            };
+            const closeModal = () => modal.classList.remove('visible');
+
+            createPortfolioBtn.addEventListener('click', openModal);
+            getStartedBtn.addEventListener('click', openModal);
+            getStartedBtnMobile.addEventListener('click', openModal);
+            closeModalBtn.addEventListener('click', closeModal);
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.classList.contains('visible')) closeModal();
+            });
+
+            function updateStep(newStep) {
+                currentStep = newStep;
+
+                document.querySelectorAll('.step-indicator').forEach(el => {
+                    const stepNum = parseInt(el.dataset.step);
+                    el.classList.toggle('active', stepNum === currentStep);
+                    // Make past steps clickable
+                    if (stepNum < currentStep) {
+                        el.classList.add('cursor-pointer');
+                    } else {
+                         el.classList.remove('cursor-pointer');
+                    }
+                });
+
+                document.querySelectorAll('.modal-step-content').forEach(el => {
+                    el.classList.toggle('active', el.id === `step-${currentStep}`);
+                });
+                
+                if (currentStep === 2) {
+                    const loader = document.getElementById('step-2-loader');
+                    const content = document.getElementById('step-2-content');
+                    loader.style.display = 'flex';
+                    content.style.display = 'none';
+                    setTimeout(() => {
+                        loader.style.display = 'none';
+                        content.style.display = 'block';
+                        renderReviewStep();
+                    }, 1500); // Simulate AI analysis
+                } else if (currentStep === 4) {
+                     renderGenerationStep();
+                }
+
+                backBtn.classList.toggle('hidden', currentStep === 1);
+                nextBtn.textContent = (currentStep === 4) ? 'Finish & Export' : 'Next';
+            }
+
+            nextBtn.addEventListener('click', () => {
+                if (currentStep < 4) {
+                    updateStep(currentStep + 1);
+                } else {
+                    // Simulation of exporting
+                    alert('Portfolio Exported! (Simulation)');
+                    closeModal();
+                }
+            });
+
+            backBtn.addEventListener('click', () => {
+                if (currentStep > 1) updateStep(currentStep - 1);
+            });
+            
+            document.querySelectorAll('.step-indicator').forEach(button => {
+               button.addEventListener('click', (e) => {
+                   const targetStep = parseInt(e.currentTarget.dataset.step);
+                   if(targetStep < currentStep) updateStep(targetStep);
+               });
+            });
+
+            // --- Step 1 Logic: Data Collection ---
+            function renderStep1() {
+                document.getElementById('file-preview-container').innerHTML = '';
+                document.getElementById('manual-entry-list').innerHTML = '';
+                document.getElementById('manual-entry-form').classList.add('hidden');
+                document.getElementById('add-manual-entry-btn').classList.remove('hidden');
+            }
+
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-upload-input');
+            
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-indigo-500');
+            });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-indigo-500'));
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-indigo-500');
+                handleFiles(e.dataTransfer.files);
+            });
+            fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+            function handleFiles(files) {
+                const previewContainer = document.getElementById('file-preview-container');
+                for (const file of files) {
+                    const isImage = file.type.startsWith('image/');
+                    const fileId = `file-${Date.now()}-${Math.random()}`;
+                    const fileEntry = {
+                        id: fileId,
+                        type: 'file',
+                        title: file.name,
+                        subtitle: isImage ? 'Image Upload' : 'Document Upload',
+                        tags: [file.type.split('/')[1] || 'file'],
+                        file: file
+                    };
+                    userJourneyData.push(fileEntry);
+
+                    const previewEl = document.createElement('div');
+                    previewEl.className = 'bg-gray-800 p-2 rounded flex items-center justify-between';
+                    previewEl.innerHTML = `<div class="flex items-center space-x-2 truncate">
+                        ${isImage ? `<img id="img-${fileId}" class="w-10 h-10 object-cover rounded flex-shrink-0">` : `<div class="w-10 h-10 bg-gray-700 rounded flex items-center justify-center text-xs flex-shrink-0">${(file.type.split('/')[1] || 'FILE').toUpperCase().substring(0,4)}</div>`}
+                        <span class="text-sm truncate">${file.name}</span>
+                    </div>`;
+                    previewContainer.appendChild(previewEl);
+                    
+                    if (isImage) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => { document.getElementById(`img-${fileId}`).src = e.target.result; };
+                        reader.readAsDataURL(file);
+                    }
+                }
+            }
+
+            const addManualBtn = document.getElementById('add-manual-entry-btn');
+            const manualForm = document.getElementById('manual-entry-form');
+            const cancelManualBtn = document.getElementById('cancel-manual-entry');
+
+            addManualBtn.addEventListener('click', () => {
+                manualForm.classList.remove('hidden');
+                addManualBtn.classList.add('hidden');
+            });
+
+            cancelManualBtn.addEventListener('click', () => {
+                manualForm.classList.add('hidden');
+                addManualBtn.classList.remove('hidden');
+                manualForm.reset();
+            });
+            
+            manualForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newEntry = {
+                    id: `manual-${Date.now()}`,
+                    type: 'manual',
+                    title: document.getElementById('manual-title').value,
+                    subtitle: document.getElementById('manual-subtitle').value,
+                    tags: document.getElementById('manual-tags').value.split(',').map(tag => tag.trim())
+                };
+                userJourneyData.push(newEntry);
+                renderManualEntries();
+                manualForm.reset();
+                manualForm.classList.add('hidden');
+                addManualBtn.classList.remove('hidden');
+            });
+
+            function renderManualEntries() {
+                const listContainer = document.getElementById('manual-entry-list');
+                listContainer.innerHTML = '';
+                userJourneyData.filter(item => item.type === 'manual').forEach(item => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'bg-gray-800 p-3 rounded';
+                    itemEl.innerHTML = `<h4 class="font-semibold text-white">${item.title}</h4><p class="text-xs text-gray-400">${item.subtitle}</p>`;
+                    listContainer.appendChild(itemEl);
+                });
+            }
+
+            document.querySelectorAll('.sub-tab').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const targetId = e.currentTarget.dataset.subtab;
+                    document.querySelectorAll('.sub-tab').forEach(btn => btn.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
+                    document.querySelectorAll('.subtab-content').forEach(content => {
+                        content.classList.toggle('hidden', content.id !== `subtab-${targetId}`);
+                    });
+                });
+            });
+
+            // --- Step 2 Logic: Review ---
+            function renderReviewStep() {
+                const container = document.getElementById('review-list-container');
+                container.innerHTML = '';
+                if (userJourneyData.length === 0) {
+                    container.innerHTML = `<p class="text-gray-500 text-center">No data added yet. Go back to Step 1 to add your skills and projects.</p>`;
+                    return;
+                }
+                userJourneyData.forEach(item => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'card p-4 rounded-lg flex justify-between items-center';
+                    itemEl.innerHTML = `
+                        <div>
+                            <h4 class="font-bold text-white">${item.title}</h4>
+                            <p class="text-sm text-gray-400">${item.subtitle}</p>
+                        </div>
+                        <button data-id="${item.id}" class="remove-item-btn text-2xl text-red-400 hover:text-red-600 font-bold">&times;</button>
+                    `;
+                    container.appendChild(itemEl);
+                });
+                
+                document.querySelectorAll('.remove-item-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const idToRemove = e.currentTarget.dataset.id;
+                        userJourneyData = userJourneyData.filter(item => item.id !== idToRemove);
+                        renderReviewStep();
+                    });
+                });
+            }
+            
+            // --- Step 4 Logic: Generation ---
+            function renderGenerationStep() {
+                const container = document.getElementById('portfolio-preview-container');
+                const targetRole = document.getElementById('target-role-input').value.trim().toLowerCase();
+                container.innerHTML = `<h3 class="text-xl font-bold gradient-text mb-4">Portfolio for a ${targetRole || 'Future Star'}</h3>`;
+                
+                if (userJourneyData.length === 0) {
+                    container.innerHTML += `<p class="text-gray-500">No data to generate portfolio from.</p>`;
+                    return;
+                }
+
+                userJourneyData.forEach(item => {
+                    const isRelevant = targetRole && item.tags.some(tag => targetRole.includes(tag.toLowerCase().trim()));
+                    const itemEl = document.createElement('div');
+                    itemEl.className = `p-4 rounded-lg mb-3 transition-all ${isRelevant ? 'bg-indigo-900/50 border border-indigo-500' : 'bg-gray-800/70'}`;
+                    let tagsHtml = item.tags.map(tag => `<span class="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-full">${tag}</span>`).join(' ');
+                    itemEl.innerHTML = `
+                        <div class="flex justify-between items-start">
+                             <div>
+                                <h4 class="font-bold text-white">${item.title}</h4>
+                                <p class="text-sm text-gray-400 mb-2">${item.subtitle}</p>
+                             </div>
+                             ${isRelevant ? '<span class="text-xs font-bold text-indigo-300">RELEVANT</span>' : ''}
+                        </div>
+                        <div class="flex flex-wrap gap-2">${tagsHtml}</div>
+                    `;
+                    container.appendChild(itemEl);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
